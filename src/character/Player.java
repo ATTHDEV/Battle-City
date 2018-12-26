@@ -1,0 +1,217 @@
+/*
+
+ */
+package character;
+
+import static character.Player2.PLAYER_HEIGHT;
+import static character.Player2.PLAYER_WIDTH;
+import static character.Player2.life;
+import game.Audio;
+import game.GameLoop;
+import map.Map;
+
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.Rectangle;
+import java.awt.event.KeyEvent;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.ImageIcon;
+
+/**
+ *
+ * @author AtthawutCPE
+ */
+public class Player {
+
+    public static final int PLAYER_WIDTH = 40;
+    public static final int PLAYER_HEIGHT = 40;
+    int playerPostX, playerPostY;
+    int walk_x, walk_y;
+    final int WALK_SPEED = 1;
+    boolean Attack = false;
+    int atkx, atky;
+    tempAttack temp_atk = new tempAttack();
+    boolean f = false;
+    int DIRECTION = 1;
+    boolean left = false, right = false, down = false, up = false;
+    int pX = 0;
+    public static boolean life = true;
+    boolean die = false;
+
+    public Player(int playerPostX, int playerPostY) {
+        this.playerPostX = playerPostX;
+        this.playerPostY = playerPostY;
+    }
+
+    public void keyDown(KeyEvent e) {
+        if (!life) {
+            return;
+        }
+        switch (e.getKeyCode()) {
+            case KeyEvent.VK_UP:
+                if (down || left || right) {
+                    break;
+                }
+                pX = 0;
+                up = true;
+                DIRECTION = 1;
+                walk_y = -WALK_SPEED;
+                break;
+            case KeyEvent.VK_DOWN:
+                if (up || left || right) {
+                    break;
+                }
+                pX = 64;
+                down = true;
+                walk_y = +WALK_SPEED;
+                DIRECTION = -1;
+                break;
+            case KeyEvent.VK_LEFT:
+                if (down || up || right) {
+                    break;
+                }
+                pX = 33;
+                left = true;
+                walk_x = -WALK_SPEED;
+                DIRECTION = -2;
+                break;
+            case KeyEvent.VK_RIGHT:
+                if (down || left || up) {
+                    break;
+                }
+                pX = 95;
+                right = true;
+                walk_x = WALK_SPEED;
+                DIRECTION = 2;
+                break;
+            case KeyEvent.VK_ENTER:
+
+//                atkx = playerPostX;
+//                atky = playerPostY;
+//                switch (DIRECTION) {
+//                    case 1:
+//                        temp_atk.addList(new PlayerAttack(atkx + 15, atky - 5, DIRECTION));
+//                        break;
+//                    case -1:
+//                        temp_atk.addList(new PlayerAttack(atkx + 15, atky + PLAYER_HEIGHT, DIRECTION));
+//                        break;
+//                    case 2:
+//                        temp_atk.addList(new PlayerAttack(atkx + PLAYER_WIDTH, atky + 17, DIRECTION));
+//                        break;
+//                    case -2:
+//                        temp_atk.addList(new PlayerAttack(atkx - 5, atky + 17, DIRECTION));
+//                        break;
+//                    default:
+//                        break;
+//                }
+                break;
+        }
+    }
+
+    public void keyUp(KeyEvent e) {
+        if (!life) {
+            return;
+        }
+        switch (e.getKeyCode()) {
+            case KeyEvent.VK_UP:
+                up = false;
+                walk_y = 0;
+                break;
+            case KeyEvent.VK_DOWN:
+                down = false;
+                walk_y = 0;
+                break;
+            case KeyEvent.VK_LEFT:
+                left = false;
+                walk_x = 0;
+                break;
+            case KeyEvent.VK_RIGHT:
+                right = false;
+                walk_x = 0;
+                break;
+            case KeyEvent.VK_ENTER:
+                atkx = playerPostX;
+                atky = playerPostY;
+                switch (DIRECTION) {
+                    case 1:
+                        temp_atk.addList(new PlayerAttack(atkx + 15, atky - 5, DIRECTION));
+                        break;
+                    case -1:
+                        temp_atk.addList(new PlayerAttack(atkx + 15, atky + PLAYER_HEIGHT, DIRECTION));
+                        break;
+                    case 2:
+                        temp_atk.addList(new PlayerAttack(atkx + PLAYER_WIDTH, atky + 17, DIRECTION));
+                        break;
+                    case -2:
+                        temp_atk.addList(new PlayerAttack(atkx - 5, atky + 17, DIRECTION));
+                        break;
+                    default:
+                        break;
+                }
+                break;
+        }
+    }
+
+    public void draw(Graphics2D pDC) {
+        ImageIcon img = new ImageIcon(getClass().getResource("/res/NES - Battle City - General Sprites.png"));
+        Image image = img.getImage();
+        Thread t = new Thread(() -> {
+            try {
+                pDC.drawImage(image, playerPostX, playerPostY, playerPostX + PLAYER_WIDTH, playerPostY + PLAYER_HEIGHT, 306, 130, 333, 158, null);
+                Thread.sleep(200);
+                die = true;
+                GameLoop.game = false;
+                this.draw(pDC);
+            } catch (InterruptedException ex) {
+                Logger.getLogger(Player.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        });
+        if (!life) {
+            if (die) {
+                return;
+            }
+            t.start();
+        }
+        pDC.drawImage(image, playerPostX, playerPostY, playerPostX + PLAYER_WIDTH, playerPostY + PLAYER_HEIGHT, pX, 1, pX + 15, 15, null);
+    }
+
+    public Rectangle getPlayerRect() {
+        return new Rectangle(playerPostX + walk_x, playerPostY/*+PLAYER_HEIGHT/2*/ + walk_y, PLAYER_WIDTH, PLAYER_HEIGHT/*/2*/);
+    }
+
+    public void Update(Map map, Graphics2D pDC, Player2 p2) {
+        if (!life) {
+            return;
+        }
+        temp_atk.listDraw(pDC);
+        temp_atk.listUpdate(pDC, map, p2, p2.getMyAttackRect());
+        for (int j = 0; j < 30; j++) {
+            for (int i = 0; i < 50; i++) {
+                Rectangle r = new Rectangle(i * Map.TILE_WIDTH, j * Map.TILE_HEIGHT, Map.TILE_WIDTH, Map.TILE_HEIGHT);
+                if (getPlayerRect().intersects(r) && ((map.getmap()[j][i] == 1) || (map.getmap()[j][i] == 2) || (map.getmap()[j][i] == 4) || (map.getmap()[j][i] == 5))) {
+                    return;
+                }
+            }
+        }
+        Rectangle r = new Rectangle(12 * Map.ITEM_WIDTH, 7 * Map.ITEM_HEIGHT, Map.ITEM_WIDTH, Map.ITEM_HEIGHT);
+        if (getPlayerRect().intersects(r) && Map.getItem == false) {
+            temp_atk.setSpecial_Attack(true);
+            new Audio("Battle City SFX (13).wav", 1000);
+            Map.getItem = true;
+            return;
+        }
+        if (getPlayerRect().intersects(p2.getPlayerRect()) && Player2.life == true) {
+            return;
+        }
+        playerPostX += walk_x;
+        playerPostY += walk_y;
+    }
+
+    public tempAttack getMyAttackRect() {
+        return temp_atk;
+    }
+}
